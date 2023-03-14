@@ -4,21 +4,22 @@ from src.model import CRNN
 from src.generator.dataset_generator import BarcodeDataset
 import torch
 
-criterion = torch.nn.CTCLoss()
+criterion = torch.nn.CTCLoss(zero_infinity=True)
+vocab = '0123456789'
 
 crnn = CRNN(
     cnn_backbone_name='resnet18d',
     cnn_backbone_pretrained=False,
-    cnn_output_size=4608,
+    cnn_output_size=8960,
     rnn_features_num=128,
     rnn_dropout=0.1,
     rnn_bidirectional=True,
     rnn_num_layers=2,
-    num_classes=28,
+    num_classes=len(vocab) + 1,
 )
 
 barcode_loader = torch.utils.data.DataLoader(
-    BarcodeDataset(epoch_size=100, vocab='0123456789'),
+    BarcodeDataset(epoch_size=100, vocab=vocab, max_length=14, img_size=(512, 280)),
     batch_size=8,
 )
 
@@ -26,7 +27,7 @@ optimizer = torch.optim.Adam(crnn.parameters(), lr=10e-3)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-epochs = 100
+epochs = 25
 
 if __name__ == '__main__':
     crnn.to(device)
