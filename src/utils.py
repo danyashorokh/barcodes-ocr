@@ -5,6 +5,7 @@ from typing import Tuple, Union
 import cv2
 import numpy as np
 import torch
+from PIL import Image, ImageOps
 
 MAX_PIXEL_INTENSITY = 255
 
@@ -32,3 +33,30 @@ def set_global_seed(seed: int):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+
+def padding(img, expected_size):
+    desired_size = expected_size
+    delta_width = desired_size - img.size[0]
+    delta_height = desired_size - img.size[1]
+    pad_width = delta_width // 2
+    pad_height = delta_height // 2
+    padding = (pad_width, pad_height, delta_width - pad_width, delta_height - pad_height)
+    return ImageOps.expand(img, padding)
+
+
+def resize_with_padding(img, expected_size):
+    img.thumbnail((expected_size[0], expected_size[1]))
+    delta_width = expected_size[0] - img.size[0]
+    delta_height = expected_size[1] - img.size[1]
+    pad_width = delta_width // 2
+    pad_height = delta_height // 2
+    padding = (pad_width, pad_height, delta_width - pad_width, delta_height - pad_height)
+    return ImageOps.expand(img, padding)
+
+
+def preprocess_image(img: np.ndarray, img_size) -> np.ndarray:
+    img = Image.fromarray(img)
+    img = resize_with_padding(img, img_size)
+    img = np.array(img)
+    return img

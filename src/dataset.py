@@ -8,7 +8,7 @@ import albumentations as albu
 import cv2
 import numpy as np
 import pandas as pd
-from src.base_config import Config
+from configs.base_config import Config
 import torch
 from torch.utils.data import DataLoader, Dataset
 
@@ -21,9 +21,11 @@ class BarcodeDataset(Dataset):
         augmentation: tp.Optional[albu.Compose] = None,
         preprocessing: tp.Optional[tp.Callable] = None,
     ):
-        self.vocab = '0123456789 '
         self.df = df
         self.config = config
+        self.vocab = self.config.vocab
+        self.max_length = self.config.max_length
+        self.expand_char = self.config.expand_char
         self.augmentation = augmentation
         self.preprocessing = preprocessing
         self.char2index = dict((char, self.vocab.index(char) + 1) for char in self.vocab)
@@ -32,6 +34,11 @@ class BarcodeDataset(Dataset):
         row = self.df.iloc[idx]
 
         value = row['result']
+        value = value.replace(' ', '')
+        orig_value_len = len(value)
+        # expand target
+        if len(value) < self.max_length:
+            value += self.expand_char * (self.max_length - len(value))
         img_path = f'{os.path.join(self.config.images_dir, row.filename)}'
 
         image = cv2.imread(img_path)
@@ -44,7 +51,7 @@ class BarcodeDataset(Dataset):
 
         image = torch.FloatTensor(image).permute(2, 1, 0)
 
-        return image, torch.LongTensor(self.encode_value(value)), torch.LongTensor([len(value)])
+        return image, torch.LongTensor(self.encode_value(value)), torch.LongTensor([orig_value_len])
 
     def __len__(self) -> int:
         return len(self.df)

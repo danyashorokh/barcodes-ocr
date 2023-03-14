@@ -4,20 +4,17 @@ import logging
 from typing import Any
 from runpy import run_path
 
-
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, RichProgressBar
-
+from torchmetrics import CharErrorRate
+from torchmetrics import MetricCollection
 from clearml import Task
 
 from src.model import CRNN
 from src.generator.dataset_generator import BarcodeDataset
-from src.base_config import Config
+from configs.base_config import Config
 from src.utils import set_global_seed
-
-from torchmetrics import CharErrorRate
-from torchmetrics import MetricCollection
 
 
 def arg_parse() -> Any:
@@ -49,7 +46,8 @@ def train(config: Config):
     model = model.train()
 
     barcode_loader = torch.utils.data.DataLoader(
-        BarcodeDataset(epoch_size=config.num_iteration_on_epoch, vocab='0123456789 '), batch_size=config.batch_size,
+        BarcodeDataset(epoch_size=config.num_iteration_on_epoch, vocab=config.vocab,
+                       max_length=config.max_length), batch_size=config.batch_size,
     )
 
     optimizer = config.optimizer(params=model.parameters(), **config.optimizer_kwargs)
@@ -90,9 +88,6 @@ def train(config: Config):
 
         def val_dataloader(self):
             return self.loader
-
-        # def test_dataloader(self):
-        #     return self.loader
 
     class TrainModule(pl.LightningModule):
         def __init__(self, model, loss, metrics, optimizer, scheduler):

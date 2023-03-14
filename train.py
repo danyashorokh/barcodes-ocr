@@ -4,20 +4,18 @@ import logging
 from typing import Any
 from runpy import run_path
 
-
-import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, RichProgressBar
-
-from clearml import Task
-
-from src.model import CRNN
-from src.base_config import Config
-from src.utils import set_global_seed
-from src.dataset import get_loaders
-
 from torchmetrics import CharErrorRate
 from torchmetrics import MetricCollection
+from clearml import Task
+
+from configs.base_config import Config
+from src.model import CRNN
+from src.utils import set_global_seed
+from src.dataset import get_loaders
+from src.data_module import DataModule
+from src.train_module import TrainModule
 
 
 def arg_parse() -> Any:
@@ -76,100 +74,6 @@ def train(config: Config):
         lr_monitor,
         RichProgressBar(leave=False),
     ]
-
-    class DataModule(pl.LightningDataModule):
-        def __init__(self, loaders):
-            super(DataModule, self).__init__()
-            self.loaders = loaders
-
-        def train_dataloader(self):
-            return self.loaders['train']
-
-        def val_dataloader(self):
-            return self.loaders['valid']
-
-        def test_dataloader(self):
-            return self.loaders['infer']
-
-    class TrainModule(pl.LightningModule):
-        def __init__(self, model, loss, metrics, optimizer, scheduler):
-            super(TrainModule, self).__init__()
-
-            self.model = model
-            self.loss = loss
-            self.optimizer = optimizer
-            self.scheduler = scheduler
-
-            # metrics
-            self.train_metrics = metrics.clone(prefix='train_')
-            self.val_metrics = metrics.clone(prefix='val_')
-            self.test_metrics = metrics.clone(prefix='test_')
-            self.save_hyperparameters()
-
-        def forward(self, x: torch.Tensor):
-            """Get output from model.
-
-            Args:
-                x: torch.Tensor - batch of images.
-
-            Returns:
-                output: torch.Tensor - predicted logits.
-            """
-            return self.model(x)
-
-        def training_step(self, batch, batch_idx):
-
-            input_images, targets, target_lengths = batch
-            output = self(input_images)
-
-            input_lengths = [output.size(0) for _ in input_images]
-            input_lengths = torch.LongTensor(input_lengths)
-            target_lengths = torch.flatten(target_lengths)
-
-            loss = self.loss(output, targets, input_lengths, target_lengths)
-            # self.train_metrics.update(output, targets)
-
-            self.log('train_loss', loss, prog_bar=True, logger=True, on_step=True)
-
-            return loss
-
-        # def training_epoch_end(self, outputs):
-
-        #     train_metrics = self.train_metrics.compute()
-
-        def validation_step(self, batch, batch_idx):
-
-            input_images, targets, target_lengths = batch
-            output = self(input_images)
-
-            input_lengths = [output.size(0) for _ in input_images]
-            input_lengths = torch.LongTensor(input_lengths)
-            target_lengths = torch.flatten(target_lengths)
-
-            loss = self.loss(output, targets, input_lengths, target_lengths)
-            # self.val_metrics.update(output, targets)
-
-            self.log('val_loss', loss, prog_bar=True, logger=True, on_step=True)
-
-            return loss
-
-        def configure_optimizers(self):
-            """To callback for configuring optimizers.
-
-            Returns:
-                optimizer: torch.optim - optimizer for PL.
-            """
-            return {'optimizer': self.optimizer, 'lr_scheduler': {'scheduler': self.scheduler}}
-
-        def on_save_checkpoint(self, checkpoint):
-            """Save custom state dict.
-
-            Function is needed, because we want only timm state_dict for scripting.
-
-            Args:
-                checkpoint: pl.checkpoint - checkpoint from PL.
-            """
-            checkpoint['my_state_dict'] = self.model.state_dict()
 
     data = DataModule(loaders)
     model = TrainModule(model, config.loss, metrics, optimizer, scheduler)

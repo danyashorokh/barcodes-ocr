@@ -36,10 +36,8 @@ class CRNN(torch.nn.Module):
 
         # Предобученный бекбон для фичей. Можно обрезать, не обязательно использовать всю глубину.
         self.backbone = timm.create_model(
-            cnn_backbone_name, pretrained=cnn_backbone_pretrained,
+            cnn_backbone_name, pretrained=cnn_backbone_pretrained, features_only=True,
         )
-        self.backbone.global_pool = torch.nn.Identity()
-        self.backbone.fc = torch.nn.Identity()
 
         # Боттлнек. Можно обойтись и без него если rnn_features_num == cnn_output_size.
         self.gate = torch.nn.Linear(cnn_output_size, rnn_features_num)
@@ -72,8 +70,8 @@ class CRNN(torch.nn.Module):
             Сырые логиты для каждой позиции в карте признаков.
         """
         cnn_features = self.backbone(tensor)
-        batch_size, channels, height, width = cnn_features.shape
-        cnn_features = cnn_features.view(
+        batch_size, channels, height, width = cnn_features[0].shape
+        cnn_features = cnn_features[0].view(
             batch_size, height * channels, width,
         ).permute(2, 0, 1)
         cnn_features = self.gate(cnn_features)

@@ -7,10 +7,13 @@ import torch
 from torch.nn import CTCLoss
 from torch.optim.lr_scheduler import StepLR
 
-from src.base_config import Config
-from src.utils import preprocess_imagenet
+from configs.base_config import Config
+from src.utils import preprocess_image
 
 SEED = 42
+VOCAB = '0123456789'
+MAX_LENGTH = 14
+EXPAND_CHAR = '0'
 IMG_SIZE = (280, 512)
 BATCH_SIZE = 8
 N_EPOCHS = 25
@@ -26,7 +29,6 @@ augmentations = albu.Compose(
             p=0.5,
         ),
         albu.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),
-        albu.ShiftScaleRotate(),
         albu.GaussianBlur(),
     ])
 
@@ -47,19 +49,22 @@ config = Config(
         'gamma': 0.1,
     },
     img_size=IMG_SIZE,
+    vocab=VOCAB,
+    max_length=MAX_LENGTH,
+    expand_char=EXPAND_CHAR,
     augmentations=augmentations,
-    preprocessing=partial(preprocess_imagenet, img_size=IMG_SIZE),
+    preprocessing=partial(preprocess_image, img_size=IMG_SIZE),
     batch_size=BATCH_SIZE,
     num_iteration_on_epoch=NUM_ITERATION_ON_EPOCH,
     n_epochs=N_EPOCHS,
     backbone_name='resnet18d',
-    cnn_backbone_pretrained=False,
-    cnn_output_size=4608,
+    cnn_backbone_pretrained=True,
+    cnn_output_size=8960,
     rnn_features_num=128,
     rnn_dropout=0.1,
     rnn_bidirectional=True,
     rnn_num_layers=2,
-    num_classes=28,
+    num_classes=len(VOCAB) + 1,
     log_metrics=['cer'],
     valid_metric='val_loss',
     minimize_metric=True,
@@ -70,7 +75,7 @@ config = Config(
     project_name='[OCR]barcodes',
     experiment_name=f'{os.path.basename(__file__).split(".")[0]}_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}',
     trainer_kwargs={
-        'accelerator': 'cpu',
+        'accelerator': 'mps',
         'devices': 1,
     },
 )

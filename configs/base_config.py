@@ -21,6 +21,9 @@ class Config:
     scheduler_kwargs: tp.Mapping
     preprocessing: tp.Callable
     img_size: tp.Tuple[int, int]
+    vocab: str
+    max_length: int
+    expand_char: str
     augmentations: albu.Compose
     batch_size: int
     n_epochs: int

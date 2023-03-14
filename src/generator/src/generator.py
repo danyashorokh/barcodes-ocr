@@ -1,8 +1,6 @@
 import numpy as np
-import PIL
-import matplotlib.pyplot as plt
 from PIL import ImageDraw, ImageFont, Image
-from typing import Any, Callable, Dict, List, NoReturn, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union
 from glob import glob
 import os
 import cv2

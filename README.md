@@ -71,3 +71,6 @@ python predict.py
 ```
 some urls
 ```
+
+### Useful links
+* https://pyimagesearch.com/2014/12/15/real-time-barcode-detection-video-python-opencv/
