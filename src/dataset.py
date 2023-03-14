@@ -34,7 +34,6 @@ class BarcodeDataset(Dataset):
         row = self.df.iloc[idx]
 
         value = row['result']
-        value = value.replace(' ', '')
         orig_value_len = len(value)
         # expand target
         if len(value) < self.max_length:

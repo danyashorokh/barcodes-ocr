@@ -11,9 +11,9 @@ from configs.base_config import Config
 from src.utils import preprocess_image
 
 SEED = 42
-VOCAB = '0123456789'
+VOCAB = '0123456789 '
 MAX_LENGTH = 14
-EXPAND_CHAR = '0'
+EXPAND_CHAR = ' '
 IMG_SIZE = (280, 512)
 BATCH_SIZE = 8
 N_EPOCHS = 25
