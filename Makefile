@@ -35,3 +35,7 @@ train_ocr:
 .PHONY: simple_predict
 simple_predict:
 	python predict --weights weights/best_openvino_model --source path/to/image
+
+.PHONY: show_dead_code
+show_dead_code:
+    vulture <your_code>

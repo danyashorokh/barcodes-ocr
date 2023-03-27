@@ -59,4 +59,17 @@ def preprocess_image(img: np.ndarray, img_size) -> np.ndarray:
     img = Image.fromarray(img)
     img = resize_with_padding(img, img_size)
     img = np.array(img)
+    img = np.transpose(img, (2, 0, 1))
     return img
+
+
+def get_code(output: torch.Tensor) -> torch.Tensor:
+    pred = torch.argmax(output, dim=2).permute(1, 0)
+    pred = pred.detach().cpu().numpy()[0]
+    pred_code = []
+    for i in range(len(pred)):  # noqa: WPS518
+        if pred[i] != 0:
+            if i == 0 or (pred[i - 1] != pred[i]):
+                pred_code.append(pred[i])
+    return torch.LongTensor(pred_code)
+

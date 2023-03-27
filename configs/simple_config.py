@@ -8,15 +8,15 @@ from torch.nn import CTCLoss
 from torch.optim.lr_scheduler import StepLR
 
 from configs.base_config import Config
-from src.utils import preprocess_image
+from src.utils import preprocess_imagenet
 
 SEED = 42
-VOCAB = '0123456789 '
-MAX_LENGTH = 14
+VOCAB = ' 0123456789'
+MAX_LENGTH = 15
 EXPAND_CHAR = ' '
-IMG_SIZE = (280, 512)
+IMG_SIZE = (512, 280)
 BATCH_SIZE = 8
-N_EPOCHS = 25
+N_EPOCHS = 5
 NUM_ITERATION_ON_EPOCH = 100
 ROOT_PATH = os.path.join(os.environ.get('ROOT_PATH'))
 
@@ -53,7 +53,7 @@ config = Config(
     max_length=MAX_LENGTH,
     expand_char=EXPAND_CHAR,
     augmentations=augmentations,
-    preprocessing=partial(preprocess_image, img_size=IMG_SIZE),
+    preprocessing=partial(preprocess_imagenet, img_size=IMG_SIZE),
     batch_size=BATCH_SIZE,
     num_iteration_on_epoch=NUM_ITERATION_ON_EPOCH,
     n_epochs=N_EPOCHS,

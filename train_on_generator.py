@@ -65,7 +65,7 @@ def train(config: Config):
     model_checkpoint = ModelCheckpoint(
         dirpath=config.checkpoints_dir, filename='{epoch}_{val_loss:.2f}_{val_f1:.2f}',
         monitor=config.valid_metric, verbose=False, save_last=None,
-        save_top_k=10, save_weights_only=True, mode='min' if config.minimize_metric else 'max')
+        save_top_k=3, save_weights_only=True, mode='min' if config.minimize_metric else 'max')
     model_checkpoint.FILE_EXTENSION = '.pth'
 
     lr_monitor = pl.callbacks.LearningRateMonitor(logging_interval='epoch')

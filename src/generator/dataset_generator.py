@@ -15,9 +15,9 @@ class BarcodeDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, i: int):
         value = str(np.random.randint(10 ** (self.max_length - 1), 10 ** self.max_length))
-        # value = '0123456789012'  # учим на одной картинке, чтобы убедиться, что сеть переобучается
+        # value = '01234567890123'  # учим на одной картинке, чтобы убедиться, что сеть переобучается
 
-        ean = barcode.EAN13(value, writer=ImageWriter())
+        ean = barcode.EAN14(value, writer=ImageWriter(), no_checksum=True)
         image = np.asarray(ean.render()) / 255.0
         image = cv2.resize(image, self.img_size)
         image = torch.FloatTensor(image).permute(2, 0, 1)

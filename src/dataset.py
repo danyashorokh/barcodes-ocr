@@ -28,7 +28,7 @@ class BarcodeDataset(Dataset):
         self.expand_char = self.config.expand_char
         self.augmentation = augmentation
         self.preprocessing = preprocessing
-        self.char2index = dict((char, self.vocab.index(char) + 1) for char in self.vocab)
+        self.char2index = dict((char, self.vocab.index(char)) for char in self.vocab)
 
     def __getitem__(self, idx: int) -> tp.Dict[str, np.ndarray]:
         row = self.df.iloc[idx]
@@ -47,8 +47,8 @@ class BarcodeDataset(Dataset):
             image = self.augmentation(image=image)['image']
         if self.preprocessing:
             image = self.preprocessing(image)
-
-        image = torch.FloatTensor(image).permute(2, 1, 0)
+        else:
+            image = torch.FloatTensor(image).permute(2, 1, 0)
 
         return image, torch.LongTensor(self.encode_value(value)), torch.LongTensor([orig_value_len])
 
