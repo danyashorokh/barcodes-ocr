@@ -73,7 +73,7 @@ config = Config(
     valid_dataset_path=os.path.join(ROOT_PATH, 'valid_df.csv'),
     test_dataset_path=os.path.join(ROOT_PATH, 'test_df.csv'),
     project_name='[OCR]barcodes',
-    experiment_name=f'gen_{os.path.basename(__file__).split(".")[0]}_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}',
+    experiment_name=f'{os.path.basename(__file__).split(".")[0]}_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}',
     trainer_kwargs={
         'accelerator': 'mps',
         'devices': 1,

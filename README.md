@@ -34,14 +34,13 @@ Download the dataset from [here](https://disk.yandex.ru/d/nk-h0vv20EZvzg)
     - [in your ClearML profile](https://app.community.clear.ml/profile) click "Create new credentials"
     - write down `clearml-init` and continue by instruction steps
 
-### Training with pytorch-lightning
-Start with `nohup`:
+### Training on generated data
 
 ```
-CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=1 ROOT_PATH=/data/ocr nohup python train.py configs/simple_config.py > log.out
+CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=1 ROOT_PATH=/data/ocr python train_on_generator.py configs/simple_config.py
 ```
 
-Start without `nohup`:
+### Training on real data
 
 ```
 CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=1 ROOT_PATH=/data/ocr python train.py configs/simple_config.py
