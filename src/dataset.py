@@ -103,7 +103,7 @@ def get_datasets(config: Config) -> tp.Tuple[Dataset, Dataset, Dataset]:
 
 def get_loaders(
     config: Config,
-) -> tp.Tuple[tp.OrderedDict[str, DataLoader], tp.Dict[str, DataLoader]]:
+) -> tp.OrderedDict[str, DataLoader]:
     train_dataset, valid_dataset, test_dataset = get_datasets(config)
 
     train_loader = DataLoader(
@@ -127,4 +127,4 @@ def get_loaders(
         num_workers=config.num_workers,
     )
 
-    return OrderedDict({'train': train_loader, 'valid': valid_loader, 'infer': test_loader})
+    return OrderedDict({'train': train_loader, 'valid': valid_loader, 'test': test_loader})

@@ -7,14 +7,14 @@ from runpy import run_path
 import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, RichProgressBar
-from torchmetrics import CharErrorRate
-from torchmetrics import MetricCollection
 from clearml import Task
 
 from src.model import CRNN
 from src.generator.dataset_generator import BarcodeDataset
 from configs.base_config import Config
 from src.utils import set_global_seed
+from src.data_module import DataModule
+from src.train_module import TrainModule
 
 
 def arg_parse() -> Any:
@@ -30,7 +30,6 @@ def train(config: Config):
     # init logger
     task = Task.init(project_name=config.project_name, task_name=config.experiment_name)
     task.connect(config.to_dict())
-    # clearml_logger = task.get_logger()
 
     # init model
     model = CRNN(
@@ -43,12 +42,21 @@ def train(config: Config):
         rnn_num_layers=config.rnn_num_layers,
         num_classes=config.num_classes,
     )
+    if config.checkpoint_name is not None:
+        model.load_state_dict(torch.load(config.checkpoint_name))
+
     model = model.train()
 
     barcode_loader = torch.utils.data.DataLoader(
         BarcodeDataset(epoch_size=config.num_iteration_on_epoch, vocab=config.vocab,
-                       max_length=config.max_length), batch_size=config.batch_size,
+                       max_length=config.max_length, img_size=config.img_size), batch_size=config.batch_size,
     )
+
+    loaders = {
+        'train': barcode_loader,
+        'valid': barcode_loader,
+        'test': barcode_loader,
+    }
 
     optimizer = config.optimizer(params=model.parameters(), **config.optimizer_kwargs)
     if config.scheduler is not None:
@@ -56,14 +64,9 @@ def train(config: Config):
     else:
         scheduler = None
 
-    # init metrics
-    metrics = MetricCollection({
-        'сer': CharErrorRate(),
-    })
-
     # init callbacks
     model_checkpoint = ModelCheckpoint(
-        dirpath=config.checkpoints_dir, filename='{epoch}_{val_loss:.2f}_{val_f1:.2f}',
+        dirpath=config.checkpoints_dir, filename='{epoch}_{val_loss:.2f}',
         monitor=config.valid_metric, verbose=False, save_last=None,
         save_top_k=3, save_weights_only=True, mode='min' if config.minimize_metric else 'max')
     model_checkpoint.FILE_EXTENSION = '.pth'
@@ -78,98 +81,8 @@ def train(config: Config):
         RichProgressBar(leave=False),
     ]
 
-    class DataModule(pl.LightningDataModule):
-        def __init__(self, loader):
-            super(DataModule, self).__init__()
-            self.loader = loader
-
-        def train_dataloader(self):
-            return self.loader
-
-        def val_dataloader(self):
-            return self.loader
-
-    class TrainModule(pl.LightningModule):
-        def __init__(self, model, loss, metrics, optimizer, scheduler):
-            super(TrainModule, self).__init__()
-
-            self.model = model
-            self.loss = loss
-            self.optimizer = optimizer
-            self.scheduler = scheduler
-
-            # metrics
-            self.train_metrics = metrics.clone(prefix='train_')
-            self.val_metrics = metrics.clone(prefix='val_')
-            self.save_hyperparameters()
-
-        def forward(self, x: torch.Tensor):
-            """Get output from model.
-
-            Args:
-                x: torch.Tensor - batch of images.
-
-            Returns:
-                output: torch.Tensor - predicted logits.
-            """
-            return self.model(x)
-
-        def training_step(self, batch, batch_idx):
-
-            input_images, targets, target_lengths = batch
-            output = self(input_images)
-
-            input_lengths = [output.size(0) for _ in input_images]
-            input_lengths = torch.LongTensor(input_lengths)
-            target_lengths = torch.flatten(target_lengths)
-
-            loss = self.loss(output, targets, input_lengths, target_lengths)
-            # self.train_metrics.update(output, targets)
-
-            self.log('train_loss', loss, prog_bar=True, logger=True, on_step=True)
-
-            return loss
-
-        # def training_epoch_end(self, outputs):
-
-        #     train_metrics = self.train_metrics.compute()
-
-        def validation_step(self, batch, batch_idx):
-
-            input_images, targets, target_lengths = batch
-            output = self(input_images)
-
-            input_lengths = [output.size(0) for _ in input_images]
-            input_lengths = torch.LongTensor(input_lengths)
-            target_lengths = torch.flatten(target_lengths)
-
-            loss = self.loss(output, targets, input_lengths, target_lengths)
-            # self.val_metrics.update(output, targets)
-
-            self.log('val_loss', loss, prog_bar=True, logger=True, on_step=True)
-
-            return loss
-
-        def configure_optimizers(self):
-            """To callback for configuring optimizers.
-
-            Returns:
-                optimizer: torch.optim - optimizer for PL.
-            """
-            return {'optimizer': self.optimizer, 'lr_scheduler': {'scheduler': self.scheduler}}
-
-        def on_save_checkpoint(self, checkpoint):
-            """Save custom state dict.
-
-            Function is needed, because we want only timm state_dict for scripting.
-
-            Args:
-                checkpoint: pl.checkpoint - checkpoint from PL.
-            """
-            checkpoint['my_state_dict'] = self.model.state_dict()
-
-    data = DataModule(barcode_loader)
-    model = TrainModule(model, config.loss, metrics, optimizer, scheduler)
+    data = DataModule(loaders)
+    model = TrainModule(model, config.loss, optimizer, scheduler)
 
     trainer = pl.Trainer(
         max_epochs=config.n_epochs,
@@ -177,6 +90,8 @@ def train(config: Config):
         **config.trainer_kwargs,
     )
     trainer.fit(model, data)
+
+    trainer.test(ckpt_path=model_checkpoint.best_model_path, datamodule=data)
 
 
 if __name__ == '__main__':

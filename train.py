@@ -4,10 +4,9 @@ import logging
 from typing import Any
 from runpy import run_path
 
+import torch
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, RichProgressBar
-from torchmetrics import CharErrorRate
-from torchmetrics import MetricCollection
 from clearml import Task
 
 from configs.base_config import Config
@@ -45,6 +44,9 @@ def train(config: Config):
         rnn_num_layers=config.rnn_num_layers,
         num_classes=config.num_classes,
     )
+    if config.checkpoint_name is not None:
+        model.load_state_dict(torch.load(config.checkpoint_name))
+
     model = model.train()
 
     optimizer = config.optimizer(params=model.parameters(), **config.optimizer_kwargs)
@@ -52,11 +54,6 @@ def train(config: Config):
         scheduler = config.scheduler(optimizer=optimizer, **config.scheduler_kwargs)
     else:
         scheduler = None
-
-    # init metrics
-    metrics = MetricCollection({
-        'сer': CharErrorRate(),
-    })
 
     # init callbacks
     model_checkpoint = ModelCheckpoint(
@@ -76,16 +73,16 @@ def train(config: Config):
     ]
 
     data = DataModule(loaders)
-    model = TrainModule(model, config.loss, metrics, optimizer, scheduler)
+    model = TrainModule(model, config.loss, optimizer, scheduler)
 
     trainer = pl.Trainer(
         max_epochs=config.n_epochs,
         callbacks=callbacks,
         **config.trainer_kwargs,
     )
-
-    # train
     trainer.fit(model, data)
+
+    trainer.test(ckpt_path=model_checkpoint.best_model_path, datamodule=data)
 
 
 if __name__ == '__main__':

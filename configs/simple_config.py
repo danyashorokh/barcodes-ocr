@@ -16,7 +16,7 @@ MAX_LENGTH = 15
 EXPAND_CHAR = ' '
 IMG_SIZE = (512, 280)
 BATCH_SIZE = 8
-N_EPOCHS = 5
+N_EPOCHS = 50
 NUM_ITERATION_ON_EPOCH = 100
 ROOT_PATH = os.path.join(os.environ.get('ROOT_PATH'))
 
@@ -65,7 +65,7 @@ config = Config(
     rnn_bidirectional=True,
     rnn_num_layers=2,
     num_classes=len(VOCAB) + 1,
-    log_metrics=['cer'],
+    log_metrics=[],
     valid_metric='val_loss',
     minimize_metric=True,
     images_dir=os.path.join(ROOT_PATH, 'full_dataset'),
@@ -73,9 +73,10 @@ config = Config(
     valid_dataset_path=os.path.join(ROOT_PATH, 'valid_df.csv'),
     test_dataset_path=os.path.join(ROOT_PATH, 'test_df.csv'),
     project_name='[OCR]barcodes',
-    experiment_name=f'{os.path.basename(__file__).split(".")[0]}_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}',
+    experiment_name=f'gen_{os.path.basename(__file__).split(".")[0]}_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}',
     trainer_kwargs={
         'accelerator': 'mps',
         'devices': 1,
     },
+    checkpoint_name=None,
 )

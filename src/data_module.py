@@ -14,4 +14,4 @@ class DataModule(pl.LightningDataModule):
         return self.loaders['valid']
 
     def test_dataloader(self):
-        return self.loaders['infer']
+        return self.loaders['test']

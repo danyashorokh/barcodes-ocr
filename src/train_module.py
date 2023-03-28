@@ -4,18 +4,13 @@ import pytorch_lightning as pl
 
 
 class TrainModule(pl.LightningModule):
-    def __init__(self, model, loss, metrics, optimizer, scheduler):
+    def __init__(self, model, loss, optimizer, scheduler):
         super(TrainModule, self).__init__()
 
         self.model = model
         self.loss = loss
         self.optimizer = optimizer
         self.scheduler = scheduler
-
-        # metrics
-        self.train_metrics = metrics.clone(prefix='train_')
-        self.val_metrics = metrics.clone(prefix='val_')
-        self.test_metrics = metrics.clone(prefix='test_')
         self.save_hyperparameters()
 
     def forward(self, x: torch.Tensor):
@@ -39,15 +34,12 @@ class TrainModule(pl.LightningModule):
         target_lengths = torch.flatten(target_lengths)
 
         loss = self.loss(output, targets, input_lengths, target_lengths)
-        # self.train_metrics.update(output, targets)
 
         self.log('train_loss', loss, prog_bar=True, logger=True, on_step=True)
 
         return loss
 
     # def training_epoch_end(self, outputs):
-
-    #     train_metrics = self.train_metrics.compute()
 
     def validation_step(self, batch, batch_idx):
 
@@ -59,9 +51,24 @@ class TrainModule(pl.LightningModule):
         target_lengths = torch.flatten(target_lengths)
 
         loss = self.loss(output, targets, input_lengths, target_lengths)
-        # self.val_metrics.update(output, targets)
 
         self.log('val_loss', loss, prog_bar=True, logger=True, on_step=True)
+
+        return loss
+
+    # def validation_epoch_end(self, outputs):
+
+    def test_step(self, batch, batch_idx):
+        input_images, targets, target_lengths = batch
+        output = self(input_images)
+
+        input_lengths = [output.size(0) for _ in input_images]
+        input_lengths = torch.LongTensor(input_lengths)
+        target_lengths = torch.flatten(target_lengths)
+
+        loss = self.loss(output, targets, input_lengths, target_lengths)
+
+        self.log('test_loss', loss, prog_bar=True, logger=True, on_step=True)
 
         return loss
 
