@@ -72,4 +72,3 @@ def get_code(output: torch.Tensor) -> torch.Tensor:
             if i == 0 or (pred[i - 1] != pred[i]):
                 pred_code.append(pred[i])
     return torch.LongTensor(pred_code)
-
