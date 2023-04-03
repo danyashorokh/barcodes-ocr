@@ -5,7 +5,7 @@ import os
 import albumentations as albu
 import torch
 from torch.nn import CTCLoss
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import ReduceLROnPlateau, MultiStepLR  # noqa
 
 from configs.base_config import Config
 from src.utils import preprocess_imagenet
@@ -15,7 +15,7 @@ VOCAB = ' 0123456789'
 MAX_LENGTH = 15
 EXPAND_CHAR = ' '
 IMG_SIZE = (512, 280)
-BATCH_SIZE = 8
+BATCH_SIZE = 16
 N_EPOCHS = 50
 NUM_ITERATION_ON_EPOCH = 100
 ROOT_PATH = os.path.join(os.environ.get('ROOT_PATH'))
@@ -43,11 +43,8 @@ config = Config(
         'weight_decay': 5e-4,
     },
     warmup_iter=0,
-    scheduler=StepLR,
-    scheduler_kwargs={
-        'step_size': 30 * NUM_ITERATION_ON_EPOCH,
-        'gamma': 0.1,
-    },
+    # scheduler=ReduceLROnPlateau, scheduler_kwargs={"mode": "min", "factor": 0.1, "patience": 5},
+    scheduler=MultiStepLR, scheduler_kwargs={"milestones": [5, 25], "gamma": 0.1},
     img_size=IMG_SIZE,
     vocab=VOCAB,
     max_length=MAX_LENGTH,
@@ -59,7 +56,7 @@ config = Config(
     n_epochs=N_EPOCHS,
     backbone_name='resnet18d',
     cnn_backbone_pretrained=True,
-    cnn_output_size=8960,
+    cnn_output_size=4608,
     rnn_features_num=128,
     rnn_dropout=0.1,
     rnn_bidirectional=True,

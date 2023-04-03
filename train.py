@@ -12,6 +12,7 @@ from clearml import Task
 from configs.base_config import Config
 from src.model import CRNN
 from src.utils import set_global_seed
+from src.metrics import accuracy
 from src.dataset import get_loaders
 from src.data_module import DataModule
 from src.train_module import TrainModule
@@ -45,7 +46,7 @@ def train(config: Config):
         num_classes=config.num_classes,
     )
     if config.checkpoint_name is not None:
-        model.load_state_dict(torch.load(config.checkpoint_name))
+        model.load_state_dict(torch.load(config.checkpoint_name)['my_state_dict'])
 
     model = model.train()
 
@@ -73,7 +74,7 @@ def train(config: Config):
     ]
 
     data = DataModule(loaders)
-    model = TrainModule(model, config.loss, optimizer, scheduler)
+    model = TrainModule(model, config.loss, accuracy, optimizer, scheduler)
 
     trainer = pl.Trainer(
         max_epochs=config.n_epochs,

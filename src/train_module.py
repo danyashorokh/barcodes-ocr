@@ -4,11 +4,12 @@ import pytorch_lightning as pl
 
 
 class TrainModule(pl.LightningModule):
-    def __init__(self, model, loss, optimizer, scheduler):
+    def __init__(self, model, loss, metric, optimizer, scheduler):
         super(TrainModule, self).__init__()
 
         self.model = model
         self.loss = loss
+        self.metric = metric
         self.optimizer = optimizer
         self.scheduler = scheduler
         self.save_hyperparameters()

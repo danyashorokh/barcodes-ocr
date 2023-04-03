@@ -36,7 +36,7 @@ class CRNN(torch.nn.Module):
 
         # Предобученный бекбон для фичей. Можно обрезать, не обязательно использовать всю глубину.
         self.backbone = timm.create_model(
-            cnn_backbone_name, pretrained=cnn_backbone_pretrained, features_only=True,
+            cnn_backbone_name, pretrained=cnn_backbone_pretrained, features_only=True, out_indices=[3],
         )
 
         # Боттлнек. Можно обойтись и без него если rnn_features_num == cnn_output_size.

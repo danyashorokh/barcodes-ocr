@@ -9,9 +9,10 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping, RichProgressBar
 from clearml import Task
 
+from configs.base_config import Config
 from src.model import CRNN
 from src.generator.dataset_generator import BarcodeDataset
-from configs.base_config import Config
+from src.metrics import accuracy
 from src.utils import set_global_seed
 from src.data_module import DataModule
 from src.train_module import TrainModule
@@ -43,13 +44,13 @@ def train(config: Config):
         num_classes=config.num_classes,
     )
     if config.checkpoint_name is not None:
-        model.load_state_dict(torch.load(config.checkpoint_name))
+        model.load_state_dict(torch.load(config.checkpoint_name)['my_state_dict'])
 
     model = model.train()
 
     barcode_loader = torch.utils.data.DataLoader(
-        BarcodeDataset(epoch_size=config.num_iteration_on_epoch, vocab=config.vocab,
-                       max_length=config.max_length, img_size=config.img_size), batch_size=config.batch_size,
+        BarcodeDataset(epoch_size=config.num_iteration_on_epoch, vocab=config.vocab, max_length=config.max_length,
+                       img_size=config.img_size, preprocessing=config.preprocessing), batch_size=config.batch_size
     )
 
     loaders = {
@@ -82,7 +83,7 @@ def train(config: Config):
     ]
 
     data = DataModule(loaders)
-    model = TrainModule(model, config.loss, optimizer, scheduler)
+    model = TrainModule(model, config.loss, accuracy, optimizer, scheduler)
 
     trainer = pl.Trainer(
         max_epochs=config.n_epochs,
