@@ -50,7 +50,7 @@ def train(config: Config):
 
     barcode_loader = torch.utils.data.DataLoader(
         BarcodeDataset(epoch_size=config.num_iteration_on_epoch, vocab=config.vocab, max_length=config.max_length,
-                       img_size=config.img_size, preprocessing=config.preprocessing), batch_size=config.batch_size
+                       img_size=config.img_size, preprocessing=config.preprocessing), batch_size=config.batch_size,
     )
 
     loaders = {

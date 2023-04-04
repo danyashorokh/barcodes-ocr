@@ -46,10 +46,10 @@ CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=1 ROOT_PATH=/data/ocr python train_on_gen
 CUDA_VISIBLE_DEVICES=0 OMP_NUM_THREADS=1 ROOT_PATH=/data/ocr python train.py configs/simple_config.py
 ```
 
-### Export to OpenVINO
+### Export to script
 
 ```
-some script
+notebooks/to-script.ipynb
 ```
 
 ### Download weights
@@ -62,13 +62,7 @@ dvc pull -R weights -r gstorage (for gdrive)
 ### Predict
 
 ```
-python predict.py
-```
-
-### Experiments logging
-
-```
-some urls
+python predict.py -w <model weghts> -i <path to image>
 ```
 
 ### Useful links

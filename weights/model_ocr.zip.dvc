@@ -1,0 +1,4 @@
+outs:
+- md5: ee69c328008fd73af4d7cf4c5425e434
+  size: 15684953
+  path: model_ocr.zip
