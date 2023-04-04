@@ -1,0 +1,26 @@
+image: python:3.8
+
+stages:
+  - lint
+  - tests
+
+lint:
+    stage: lint
+    script:
+      - python3 -m pip install wemake-python-styleguide==0.16.1
+      - make lint
+
+unit_tests:
+    stage: tests
+    script:
+      - ls
+      - make install_c_libs && make install && make download_weights
+      - make run_unit_tests
+
+before_script:
+    - mkdir ~/.ssh
+    - echo "$HOST_SSH_KEY_BASE64" | base64 -d > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+
+after_script:
+    - rm -f ~/.ssh/id_rsa
